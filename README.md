@@ -66,33 +66,31 @@ cd software/cpu_only
 python3 cnn_cpu.py --image sample.jpg
 ```
 
+### CPU-Only Baseline
 ```bash
-# ==============================
-# CPU-Only Baseline Inference
-# ==============================
 cd software/cpu_only
 python3 cnn_cpu.py --image sample.jpg
-# Outputs: Prediction, confidence, latency (ms), FPS
+```
+Output: Prediction, confidence, latency (ms), FPS
 
-# ==============================
-# FPGA-Accelerated Inference
-# ==============================
+### FPGA-Accelerated Inference
+```bash
 cd ../fpga_accel
 python3 inference_fpga.py --image sample.jpg
-# Outputs: Prediction, confidence, latency (ms), FPS
-
-# ==============================
-# Live Camera Inference (Optional)
-# ==============================
-python3 inference_fpga.py --camera 1
-# Press 'q' to exit
-
-# ==============================
-# Performance Benchmarking
-# ==============================
-python3 benchmark.py
-# Outputs: Average latency, FPS, speedup ratio
 ```
+Output: Prediction, confidence, latency (ms), FPS
+
+### Live Camera Inference
+```bash
+python3 inference_fpga.py --camera 1
+```
+Press q to exit
+
+### Performance Benchmarking
+```bash
+python3 benchmark.py
+```
+Output: Average latency, FPS, speedup ratio
 
 ## Repository Structure
 See `/docs` for architecture and performance analysis.
