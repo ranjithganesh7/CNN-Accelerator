@@ -30,6 +30,63 @@ A hardware-accelerated CNN IP was developed using Vitis HLS, integrated into Viv
 | Speedup | XX | XX |
 | Power Efficiency | XX | XX |
 
+## GitHub Repository Structure
+```
+fpga-cnn-accelerator-zynq/
+│
+├── README.md
+├── LICENSE
+├── docs/
+│   ├── architecture.md
+│   ├── design_partitioning.md
+│   ├── performance_analysis.md
+│   ├── cpu_vs_fpga_comparison.md
+│   ├── power_analysis.md
+│   ├── resource_utilization.md
+│   └── diagrams/
+│       ├── system_architecture.png
+│       ├── hw_sw_partition.png
+│       ├── cnn_accelerator_pipeline.png
+│
+├── hls/
+│   ├── cnn_accelerator.cpp
+│   ├── cnn_accelerator.h
+│   ├── tb_cnn.cpp
+│   ├── vitis_hls_project/
+│
+├── vivado/
+│   ├── block_design/
+│   ├── constraints/
+│   ├── bitstream/
+│   │   └── design.bit
+│
+├── software/
+│   ├── cpu_only/
+│   │   ├── cnn_cpu.cpp
+│   │   └── benchmark_cpu.py
+│   ├── fpga_accel/
+│   │   ├── overlay.bit
+│   │   ├── overlay.hwh
+│   │   ├── inference_fpga.py
+│   │   └── dma_utils.py
+│
+├── dataset/
+│   └── sample_images/
+│
+├── results/
+│   ├── latency_fps.csv
+│   ├── accuracy_results.csv
+│   └── screenshots/
+│
+├── demo/
+│   ├── demo_video_link.txt
+│   └── demo_script.md
+│
+└── report/
+    ├── Final_Project_Report.pdf
+    └── figures/
+```
+
 ## Demo
 ▶ Demo Video: 
 
