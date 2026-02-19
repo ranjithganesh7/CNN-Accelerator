@@ -13,14 +13,10 @@ A hardware-accelerated CNN IP was developed using Vitis HLS, integrated into Viv
 
 ## Hardware Platform
 - Xilinx Zynq SoC (PYNQ-Z2)
-- ARM Cortex-A9
-- FPGA Fabric with DSP acceleration
 
 ## Software Stack
-- Vitis HLS
-- Vivado Design Suite
-- PYNQ Framework
-- Python + OpenCV
+- Vitis HLS 2023.1
+- Vivado Design Suite 2023.1
 
 ## Performance Highlights
 | Metric | CPU Only | FPGA Accelerated |
