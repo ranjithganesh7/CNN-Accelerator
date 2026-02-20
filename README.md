@@ -1,30 +1,28 @@
 # Real-Time Object Detection Using Hardware-Accelerated CNN on Xilinx Zynq FPGA with Arm Processor
 
 ## Overview
-This project demonstrates real-time CNN inference acceleration on a Xilinx Zynq SoC by offloading compute-intensive layers to FPGA fabric while using the Arm processor for control and preprocessing.
+This project demonstrates real-time Convolutional Neural Network (CNN) inference acceleration on a Xilinx Zynq-7000 SoC. By heavily leveraging hardware/software co-design, compute-intensive layers of the CNN are offloaded to the FPGA programmable logic (PL), while the Arm Cortex-A9 processor (PS) handles system control, data movement, and image preprocessing.
 
-A hardware-accelerated CNN IP was developed using Vitis HLS, integrated into Vivado, and deployed on a PYNQ-Z2 board.
+Developed as part of the Bharat AI-SoC Student Challenge and ARM hackathon, this hardware-accelerated CNN IP was built using Vitis HLS, integrated via Vivado, and deployed on a PYNQ-Z2 board.
 
 ## Key Features
-- FPGA-accelerated CNN inference
-- Hardware/Software co-design using Vitis and Vivado
-- Real-time image classification/object detection
-- Quantitative comparison with CPU-only implementation
+- FPGA-Accelerated Inference: Custom IP for spatial convolution and pooling.
+- HW/SW Co-Design: Seamless partitioning using Vitis HLS and Vivado.
+- Real-Time Processing: High-throughput object detection and image classification.
+- Quantitative Benchmarking: Built-in scripts to compare latency, throughput, and power against a purely software-driven CPU baseline.
 
-## Hardware Platform
-- Xilinx Zynq SoC (PYNQ-Z2)
-
-## Software Stack
-- Vitis HLS 2023.1
-- Vivado Design Suite 2023.1
+## System Stack
+- Hardware: Xilinx Zynq-7000 SoC (PYNQ-Z2 Development Board)
+- Software Design: Vitis HLS 2023.1, Vivado Design Suite 2023.1
+- Embedded Environment: PYNQ Linux, Python 3.x, OpenCV
 
 ## Performance Highlights
 | Metric | CPU Only | FPGA Accelerated |
 |------|---------|-----------------|
-| Latency (ms) | XX | XX |
-| FPS | XX | XX |
-| Speedup | XX | XX |
-| Power Efficiency | XX | XX |
+| Latency (ms) | 3347.1 | 114.117 |
+| FPS | 1.86 | 8.76 |
+| Throughput | 0.056 | 0.108 |
+| Power Efficiency | Baseline | Improved |
 
 ## GitHub Repository Structure
 ```
@@ -84,7 +82,7 @@ fpga-cnn-accelerator-zynq/
 ```
 
 ## Demo
-▶ Demo Video: 
+▶ Demo Video: [https://drive.google.com/file/d/1zEg1VLj9V9LxN7ka2FiaaFTp8HAQc8l4/view?usp=drive_link](https://drive.google.com/file/d/1zEg1VLj9V9LxN7ka2FiaaFTp8HAQc8l4/view?usp=drive_link)
 
 
 ## 🚀 How to Run
