@@ -6,175 +6,151 @@ import matplotlib.pyplot as plt
 import matplotlib.patches as patches
 from pathlib import Path
 
-
-# ------------------------------------------------------------
-# Configuration
-# ------------------------------------------------------------
-
-HEADER_PATH = Path("./weights.h")
-IMAGE_PATH  = Path("./test_image_1.jpg") 
+# ==========================================
+# 1. CONFIGURATION
+# ==========================================
+HEADER_PATH = Path("/home/xilinx/pynq/overlays/final/weights.h")
+IMAGE_PATH  = Path("/home/xilinx/pynq/overlays/final/test_image_9.jpg")
 
 CLASSES = [
     "plane", "car", "bird", "cat", "deer",
     "dog", "frog", "horse", "ship", "truck"
 ]
 
+# ==========================================
+# 2. MODEL DEFINITION (CPU)
+# ==========================================
+class SimpleCNN:
+    def __init__(self, weights_path):
+        self.weights = self._load_weights(weights_path)
+        
+        # Reshape weights to match Architecture
+        self.w1 = self.weights["layer1_w"].reshape(16, 3, 3, 3)
+        self.b1 = self.weights["layer1_b"]
+        self.w2 = self.weights["layer2_w"].reshape(32, 16, 3, 3)
+        self.b2 = self.weights["layer2_b"]
+        self.w3 = self.weights["layer3_w"].reshape(64, 32, 3, 3)
+        self.b3 = self.weights["layer3_b"]
+        self.fc_w = self.weights["fc_w"].reshape(10, 1024)
+        self.fc_b = self.weights["fc_b"]
 
-# ------------------------------------------------------------
-# Weight Loader
-# ------------------------------------------------------------
+    def _load_weights(self, filepath):
+        if not filepath.exists():
+            raise FileNotFoundError(f"Weights file not found: {filepath}")
+        with open(filepath, "r") as f:
+            content = f.read()
+        pattern = re.compile(r"static const float (\w+)\[\] = \{(.*?)\};", re.DOTALL)
+        weights = {}
+        for name, array_str in pattern.findall(content):
+            clean = array_str.replace("\n", "").replace(" ", "")
+            values = [float(x) for x in clean.split(",") if x] 
+            weights[name] = np.array(values, dtype=np.float32)
+        return weights
 
-def load_weights(filepath: Path) -> dict:
-    if not filepath.exists():
-        raise FileNotFoundError(f"Weights file not found: {filepath}")
+    def conv2d(self, x, weights, bias):
+        h, w, ch_in = x.shape
+        ch_out = weights.shape[0]
+        padded = np.pad(x, ((1, 1), (1, 1), (0, 0)), mode="constant")
+        out = np.zeros((h, w, ch_out), dtype=np.float32)
+        for co in range(ch_out):
+            for ci in range(ch_in):
+                kernel = weights[co, ci]
+                for i in range(3):
+                    for j in range(3):
+                        out[:, :, co] += padded[i:i+h, j:j+w, ci] * kernel[i, j]
+            out[:, :, co] += bias[co]
+        return out
 
-    with open(filepath, "r") as f:
-        content = f.read()
+    def relu(self, x): return np.maximum(0, x)
 
-    pattern = re.compile(
-        r"static const float (\w+)\[\] = \{(.*?)\};",
-        re.DOTALL
-    )
+    def max_pool(self, x, stride=2):
+        h, w, ch = x.shape
+        out = np.zeros((h // stride, w // stride, ch), dtype=np.float32)
+        for c in range(ch):
+            for y in range(0, h, stride):
+                for x_ in range(0, w, stride):
+                    out[y//stride, x_//stride, c] = np.max(x[y:y+stride, x_:x_+stride, c])
+        return out
 
-    weights = {}
-    for name, array_str in pattern.findall(content):
-        clean = array_str.replace("\n", "").replace(" ", "")
-        values = [float(x) for x in clean.split(",") if x]
-        weights[name] = np.array(values, dtype=np.float32)
+    def softmax(self, logits):
+        e_x = np.exp(logits - np.max(logits))
+        return e_x / np.sum(e_x)
 
-    return weights
+    def forward(self, img_tensor):
+        x = self.max_pool(self.relu(self.conv2d(img_tensor, self.w1, self.b1)))
+        x = self.max_pool(self.relu(self.conv2d(x, self.w2, self.b2)))
+        x = self.max_pool(self.relu(self.conv2d(x, self.w3, self.b3)))
+        x_flat = x.transpose(2, 0, 1).flatten()
+        return self.softmax(np.dot(self.fc_w, x_flat) + self.fc_b)
 
-
-# ------------------------------------------------------------
-# Core Operations
-# ------------------------------------------------------------
-
-def conv2d(x, weights, bias):
-    h, w, ch_in = x.shape
-    ch_out = weights.shape[0]
-
-    padded = np.pad(x, ((1, 1), (1, 1), (0, 0)), mode="constant")
-    out = np.zeros((h, w, ch_out), dtype=np.float32)
-
-    for co in range(ch_out):
-        for ci in range(ch_in):
-            kernel = weights[co, ci]
-            for i in range(3):
-                for j in range(3):
-                    out[:, :, co] += padded[i:i+h, j:j+w, ci] * kernel[i, j]
-        out[:, :, co] += bias[co]
-
-    return out
-
-
-def relu(x):
-    return np.maximum(0, x)
-
-
-def max_pool(x, stride=2):
-    h, w, ch = x.shape
-    out = np.zeros((h // stride, w // stride, ch), dtype=np.float32)
-
-    for c in range(ch):
-        for y in range(0, h, stride):
-            for x_ in range(0, w, stride):
-                window = x[y:y+stride, x_:x_+stride, c]
-                out[y//stride, x_//stride, c] = np.max(window)
-
-    return out
-
-
-def softmax(logits):
-    exp = np.exp(logits - np.max(logits))
-    return exp / np.sum(exp)
-
-
-# ------------------------------------------------------------
-# Main
-# ------------------------------------------------------------
-
+# ==========================================
+# 3. MAIN EXECUTION
+# ==========================================
 def main():
+    print("🚀 Starting CPU Inference...\n")
+    
+    # --- Setup ---
+    model = SimpleCNN(HEADER_PATH)
+    if not IMAGE_PATH.exists(): raise FileNotFoundError(f"Image not found: {IMAGE_PATH}")
 
-    weights = load_weights(HEADER_PATH)
-
-    w1 = weights["layer1_w"].reshape(16, 3, 3, 3)
-    b1 = weights["layer1_b"]
-
-    w2 = weights["layer2_w"].reshape(32, 16, 3, 3)
-    b2 = weights["layer2_b"]
-
-    w3 = weights["layer3_w"].reshape(64, 32, 3, 3)
-    b3 = weights["layer3_b"]
-
-    fc_w = weights["fc_w"].reshape(10, 1024)
-    fc_b = weights["fc_b"]
-
-    if not IMAGE_PATH.exists():
-        raise FileNotFoundError(f"Image not found: {IMAGE_PATH}")
-
-    img = cv2.imread(str(IMAGE_PATH))
-    img_rgb = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
+    # --- Preprocessing ---
+    img_bgr = cv2.imread(str(IMAGE_PATH))
+    img_rgb = cv2.cvtColor(img_bgr, cv2.COLOR_BGR2RGB)
     img_resized = cv2.resize(img_rgb, (32, 32))
-
+    
+    # Normalize
     img_tensor = (img_resized / 255.0 - 0.5) / 0.5
     img_tensor = img_tensor.astype(np.float32)
 
+    # --- Display Input Images ---
+    fig, axes = plt.subplots(1, 2, figsize=(8, 4))
+    axes[0].imshow(img_rgb)
+    axes[0].set_title("Original Test Image")
+    axes[0].axis('off')
+    
+    axes[1].imshow(img_resized)
+    axes[1].set_title("CPU Input (32x32)")
+    axes[1].axis('off')
+    plt.tight_layout()
+    plt.show()
+
+    # --- Run Inference ---
     start = time.perf_counter()
-
-    x = conv2d(img_tensor, w1, b1)
-    x = relu(x)
-    x = max_pool(x)
-
-    x = conv2d(x, w2, b2)
-    x = relu(x)
-    x = max_pool(x)
-
-    x = conv2d(x, w3, b3)
-    x = relu(x)
-    x = max_pool(x)
-
-    x = x.transpose(2, 0, 1).flatten()
-    logits = np.dot(fc_w, x) + fc_b
-    probs = softmax(logits)
-
+    probs = model.forward(img_tensor)
     end = time.perf_counter()
     latency_ms = (end - start) * 1000
 
+    # --- Results ---
     top5 = np.argsort(probs)[::-1][:5]
+    top_label = CLASSES[top5[0]].upper()
+    top_score = probs[top5[0]] * 100
 
-    print("\n========================================")
-    print(f"Inference Time : {latency_ms:.2f} ms")
-    print("----------------------------------------")
-    print(f"{'Rank':<6}{'Class':<12}{'Confidence'}")
-    print("----------------------------------------")
+    print(f"⏱️ Inference Time: {latency_ms:.2f} ms")
+    print("\n-------------------------------------------")
+    print("📊 TOP 5 PREDICTIONS (CPU SOFTWARE):")
+    print("-------------------------------------------")
+    for i, idx in enumerate(top5):
+        print(f"{i+1}. {CLASSES[idx].upper():<10} : {probs[idx]*100:>6.2f}%")
+    print("-------------------------------------------")
 
-    for rank, idx in enumerate(top5):
-        print(f"{rank+1:<6}{CLASSES[idx]:<12}{probs[idx]*100:>8.2f}%")
+    # --- Display Final Result ---
+    fig, ax = plt.subplots(1, figsize=(6, 6))
+    ax.imshow(img_rgb)
+    h, w, _ = img_rgb.shape
 
-    print("========================================\n")
-
-    best_idx = top5[0]
-
-    fig, ax = plt.subplots(figsize=(6, 6))
-    ax.imshow(img_resized)
-
-    rect = patches.Rectangle(
-        (0.5, 0.5),
-        30.5,
-        30.5,
-        linewidth=3,
-        edgecolor="lime",
-        facecolor="none"
-    )
-
+    # Draw bounding box
+    rect = patches.Rectangle((1, 1), w-2, h-2, linewidth=5, 
+                             edgecolor='#00FF00', facecolor='none')
     ax.add_patch(rect)
-    ax.set_title(
-        f"Prediction: {CLASSES[best_idx].upper()} "
-        f"({probs[best_idx]*100:.2f}%)"
-    )
-    plt.axis("off")
-    plt.show()
 
+    # Draw label tag
+    tag = f" {top_label}: {top_score:.1f}% "
+    ax.text(w * 0.02, h * 0.08, tag, color='white', fontsize=14, fontweight='bold',
+            bbox=dict(facecolor='#00FF00', edgecolor='none', pad=0.3))
+
+    plt.title("CPU Inference Result", fontsize=15)
+    plt.axis('off')
+    plt.show()
 
 if __name__ == "__main__":
     main()
