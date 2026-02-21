@@ -80,49 +80,7 @@ root/
 3. Connect power, Ethernet/USB, and camera (optional)  
 4. Power ON the board  
 
-### Deploy FPGA Bitstream
-```bash
-scp overlay.bit xilinx@<board_ip>:/home/xilinx/
-scp overlay.hwh xilinx@<board_ip>:/home/xilinx/
-python3 load_overlay.py
-```
 
-## ▶️ Execution Commands
-
-### Run CPU-Only Baseline
-```bash
-cd software/cpu_only
-python3 cnn_cpu.py --image sample.jpg
-```
-
-### CPU-Only Baseline
-```bash
-cd software/cpu_only
-python3 cnn_cpu.py --image sample.jpg
-```
-Output: Prediction, confidence, latency (ms), FPS
-
-### FPGA-Accelerated Inference
-```bash
-cd ../fpga_accel
-python3 inference_fpga.py --image sample.jpg
-```
-Output: Prediction, confidence, latency (ms), FPS
-
-### Live Camera Inference
-```bash
-python3 inference_fpga.py --camera 1
-```
-Press q to exit
-
-### Performance Benchmarking
-```bash
-python3 benchmark.py
-```
-Output: Average latency, FPS, speedup ratio
-
-## Repository Structure
-See `/docs` for architecture and performance analysis.
 
 ## Authors
 - Royce Niran George A
