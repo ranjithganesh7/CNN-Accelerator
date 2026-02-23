@@ -80,49 +80,21 @@ root/
 3. Connect power, Ethernet/USB, and camera (optional)  
 4. Power ON the board  
 
-### Deploy FPGA Bitstream
-```bash
-scp overlay.bit xilinx@<board_ip>:/home/xilinx/
-scp overlay.hwh xilinx@<board_ip>:/home/xilinx/
-python3 load_overlay.py
-```
+### Results
 
-## ▶️ Execution Commands
+#### Pynq z2 FPGA
+<img width="1600" height="1200" alt="image" src="https://github.com/user-attachments/assets/369a25ae-fd30-47f6-8586-35bb9128b81d" />
 
-### Run CPU-Only Baseline
-```bash
-cd software/cpu_only
-python3 cnn_cpu.py --image sample.jpg
-```
+#### CPU Inference
+<img width="671" height="790" alt="image" src="https://github.com/user-attachments/assets/e2812f14-09a8-486a-8adb-c805d072f221" />
 
-### CPU-Only Baseline
-```bash
-cd software/cpu_only
-python3 cnn_cpu.py --image sample.jpg
-```
-Output: Prediction, confidence, latency (ms), FPS
+#### FPGA Inference
+<img width="489" height="533" alt="image" src="https://github.com/user-attachments/assets/a9dd6e28-39ad-4d00-af3e-a6fa7f42af72" />
 
-### FPGA-Accelerated Inference
-```bash
-cd ../fpga_accel
-python3 inference_fpga.py --image sample.jpg
-```
-Output: Prediction, confidence, latency (ms), FPS
+#### Detection
+<img width="1480" height="571" alt="image" src="https://github.com/user-attachments/assets/0aae2864-75b6-459f-bb88-4c792fd300ed" />
 
-### Live Camera Inference
-```bash
-python3 inference_fpga.py --camera 1
-```
-Press q to exit
 
-### Performance Benchmarking
-```bash
-python3 benchmark.py
-```
-Output: Average latency, FPS, speedup ratio
-
-## Repository Structure
-See `/docs` for architecture and performance analysis.
 
 ## Authors
 - Royce Niran George A
